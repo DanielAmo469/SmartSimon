@@ -168,12 +168,12 @@ void playerTurn() {
     simonTurn();  // Extend the sequence and play again
 }
 
-// Function to check button press
+// Function to check button press (Debounce)
 bool checkButtonPress(int &pressedButton) {
     for (int i = 0; i < 5; i++) {
-        if (digitalRead(buttons[i]) == LOW) {
-            delay(50);  // Simple debounce
-            while (digitalRead(buttons[i]) == LOW);  // Wait for release
+        if (digitalRead(BTN_1 + i) == LOW) {
+            delay(150); // ✅ Simple debounce
+            while (digitalRead(BTN_1 + i) == LOW);  // Wait for button release
             pressedButton = i;
             return true;
         }
