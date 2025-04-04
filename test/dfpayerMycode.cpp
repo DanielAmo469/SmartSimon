@@ -1,3 +1,4 @@
+#include <esp32-hal.h>
 
 #define BTN_1 18
 #define BTN_2 19

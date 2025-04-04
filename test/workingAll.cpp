@@ -53,7 +53,6 @@ int delayBetweenSteps = 800;
 String userID = ""; // Stores user ID after successful login
 String username = "";
 bool isLoggedIn = false;
-bool volumeReceived = false;
 
 // ✅ Define Button & LED Arrays
 const int buttons[] = {BTN_1, BTN_2, BTN_3, BTN_4, BTN_5};
@@ -220,7 +219,7 @@ void chooseSound()
             Serial.print(folderName);
             Serial.println(") selected!");
 
-            delay(2000); // Keep LED on for 5 seconds
+            delay(5000); // Keep LED on for 5 seconds
 
             // ✅ Turn off the selected LED
             digitalWrite(leds[pressedButton], LOW);
@@ -324,73 +323,31 @@ void gameOver()
     Serial.println(F("❌ Game Over!"));
     Serial.print(F("🏆 Final Score: "));
     Serial.println(score);
-
-    for (int i = 0; i < 3; i++) {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Game Over!");
-        lcd.setCursor(0, 1);
-        lcd.print("Score: ");
-        lcd.print(score);
-    
-        for (int j = 0; j < 5; j++) digitalWrite(leds[j], HIGH);
-        delay(300);
-    
-        lcd.clear();
-        for (int j = 0; j < 5; j++) digitalWrite(leds[j], LOW);
-        delay(300);
-    }
+    updateLCD("Game Over!", ("Score: " + String(score)).c_str());
 
     // ✅ Send score to FastAPI
     submitScore(score);
-    if (isLoggedIn) {
-        lcd.clear();
-        lcd.setCursor(0, 0);
-        lcd.print("Change Volume?");
-        lcd.setCursor(0, 1);
-        lcd.print("Red:No Ylw:Yes");
- 
-        digitalWrite(LED_5, HIGH); // Yellow
-        digitalWrite(LED_4, HIGH); // Red
- 
-        Serial.println("🔉 Do you want to change the volume?");
-        Serial.println("🔴 Red = NO, 🟡 Yellow = YES");
- 
-        while (true) {
-            if (digitalRead(BTN_5) == LOW) {
-                Serial.println("🟡 Waiting for volume from web...");
-                digitalWrite(LED_5, LOW);
-                digitalWrite(LED_4, LOW);
-                lcd.clear();
-                lcd.setCursor(0, 0);
-                lcd.print("Waiting Volume");
-                volumeReceived = false;  // ✅ Reset before waiting
-                
-                while (!volumeReceived) {
-                    server.handleClient();
-                    delay(100);
-                }
- 
-                break;
-            }
- 
-            if (digitalRead(BTN_4) == LOW) {
-                Serial.println("🔴 Skipping volume. Using previous/default.");
-                digitalWrite(LED_5, LOW);
-                digitalWrite(LED_4, LOW);
-                break;
-            }
-            delay(100);
-        }
-    }
 
+    for (int i = 0; i < 3; i++)
+    {
+        for (int j = 0; j < 5; j++)
+        {
+            digitalWrite(leds[j], HIGH);
+        }
+        delay(500);
+        for (int j = 0; j < 5; j++)
+        {
+            digitalWrite(leds[j], LOW);
+        }
+        delay(500);
+    }
 
     // ✅ Ask if the user wants to change the sound
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Change Sound?");
     lcd.setCursor(0, 1);
-    lcd.print("Red:No Ylw:Yes");
+    lcd.print("Yes:Ylw  No:Red");
 
     Serial.println("🎵 Do you want to change the sound?");
     Serial.println("🟡 Press Yellow for YES");
@@ -443,7 +400,7 @@ void askForLogin()
     lcd.setCursor(0, 0);
     lcd.print("Login via Web?");
     lcd.setCursor(0, 1);
-    lcd.print("Red:No Ylw:Yes");
+    lcd.print("Yes:Ylw  No:Red");
 
     digitalWrite(LED_5, HIGH); // Yellow LED ON (Yes)
     digitalWrite(LED_4, HIGH); // Red LED ON (No)
@@ -474,13 +431,14 @@ void askForLogin()
             lcd.print("ID: ");
             lcd.print(userID);
 
-        Serial.println("✅ User Logged In: " + username + " (ID: " + userID + ")");
+            Serial.println("✅ User Logged In: " + username + " (ID: " + userID + ")");
+            delay(2000);
 
-        // ✅ Ask user to choose a sound after login
-        chooseSound();
-        delay(1000);
-        waitForStart(); // ensures LED loop before starting
-        return;
+            // ✅ Ask user to choose a sound after login
+            chooseSound();
+            delay(1000);
+            waitForStart(); // ensures LED loop before starting
+            return;
         }
 
         if (digitalRead(BTN_4) == LOW)
@@ -518,49 +476,15 @@ void handleLoginRequest()
     lcd.setCursor(0, 0);
     lcd.print("Hello, ");
     lcd.print(username);
+    lcd.setCursor(0, 1);
+    lcd.print("ID: ");
+    lcd.print(userID);
 
     Serial.println("✅ User Logged In: " + username + " (ID: " + userID + ")");
     server.send(200, "text/plain", "Login Data Received");
 
-    delay(2000);
-    // Insert volume control prompt before sound selection
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Custom Volume?");
-    lcd.setCursor(0, 1);
-    lcd.print("Red:No Ylw:Yes");
-    digitalWrite(LED_5, HIGH);
-    digitalWrite(LED_4, HIGH);
-
-    Serial.println("🔊 Ask user to set volume via web?");
-    Serial.println("🟡 Yellow = YES, 🔴 Red = NO");
-
-    while (true) {
-        if (digitalRead(BTN_5) == LOW) {
-            Serial.println("🟡 Waiting for volume from web...");
-            digitalWrite(LED_5, LOW);
-            digitalWrite(LED_4, LOW);
-            lcd.clear();
-            lcd.setCursor(0, 0);
-            lcd.print("Waiting Volume");
-
-            while (!volumeReceived) {
-                server.handleClient();
-                delay(100);
-            }
-            break;
-        }
-        if (digitalRead(BTN_4) == LOW) {
-            Serial.println("🔴 Skipping volume. Using default.");
-            setVolume(25);
-            digitalWrite(LED_5, LOW);
-            digitalWrite(LED_4, LOW);
-            break;
-        }
-        delay(100);
-    }
-
     // ✅ Ask user to choose a sound before starting the game
+    delay(2000);
     chooseSound(); // This now ensures sound selection happens before game starts
     delay(1000);
     waitForStart();
@@ -619,7 +543,7 @@ void setup()
         String body = server.arg("plain");
         Serial.println("🔊 Volume request received: " + body);
     
-    JsonDocument doc;
+        StaticJsonDocument<200> doc;
         DeserializationError error = deserializeJson(doc, body);
         if (error) {
             Serial.println("❌ Failed to parse JSON");
@@ -633,16 +557,9 @@ void setup()
             return;
         }
     
-    setVolume(volume); // your existing function
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("Volume set to:");
-    lcd.setCursor(0, 1);
-    lcd.print(volume);
-    delay(2000);
-    volumeReceived = true;
-    Serial.printf("✅ Volume set to %d\n", volume);
-    server.send(200, "application/json", "{\"message\": \"Volume set successfully\"}");
+        setVolume(volume); // your existing function
+        Serial.printf("✅ Volume set to %d\n", volume);
+        server.send(200, "application/json", "{\"message\": \"Volume set successfully\"}");
     });
 
     // ✅ Initialize LCD

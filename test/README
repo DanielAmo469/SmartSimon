@@ -1,11 +1,126 @@
+==============================
+Smart Simon - readme.txt
+==============================
 
-This directory is intended for PlatformIO Test Runner and project tests.
+## 📌 General Description:
 
-Unit Testing is a software testing method by which individual units of
-source code, sets of one or more MCU program modules together with associated
-control data, usage procedures, and operating procedures, are tested to
-determine whether they are fit for use. Unit testing finds problems early
-in the development cycle.
+This document provides essential information for running the Smart Simon project. It includes environment setup, hardware connections, and step-by-step instructions for initializing and running the system.
 
-More information about PlatformIO Unit Testing:
-- https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
+## 💻 Development Environment:
+
+- ESP32 Microcontroller (ESP32-DevKitC-32D, 38 pins, CP2102)
+- Arduino IDE (version 1.8.19 or newer) / PlatformIO (optional)
+- FastAPI Backend (Python 3.10+)
+- PostgreSQL Database (Version 13+)
+- React Frontend (Node.js 18+)
+- Serial Monitor for debugging (e.g. Arduino Serial Monitor, PuTTY)
+- Optional tools: EasyEDA, draw.io, VSCode
+
+## 📁 Project Structure:
+
+- `main.cpp` – Source code for ESP32
+- `main.py` – Backend API server
+- `frontend/` – React app for user login and management
+- `requirements.txt` – Python dependencies
+- `db_setup.sql` – PostgreSQL schema
+- `readme.txt` – This file
+
+## 🔌 Hardware Connections:
+
+- **LCD 1602 I2C (with PCF8574 adapter)**
+
+  - SDA → GPIO 13 (LCD_SDA)
+  - SCL → GPIO 14 (LCD_SCL)
+  - VCC → 5V
+  - GND → GND
+
+- **Push Buttons (x5)**
+
+  - Purple → GPIO 18
+  - Green → GPIO 19
+  - White → GPIO 23
+  - Red (No) → GPIO 33
+  - Yellow (Yes) → GPIO 27
+  - Common ground for all buttons (via internal `INPUT_PULLUP`)
+
+- **LEDs (x5) with 220Ω resistors**
+
+  - Purple → GPIO 5
+  - Green → GPIO 21
+  - White → GPIO 22
+  - Red → GPIO 32
+  - Yellow → GPIO 26
+  - All cathodes tied together to GND through resistors
+
+- **DFPlayer Mini MP3 Module**
+
+  - TX → GPIO 16
+  - RX → GPIO 17 (via 1kΩ resistor)
+  - VCC → 5V
+  - GND → GND
+  - Speaker connected to DFPlayer speaker out pins
+
+- **Power**
+  - USB Type-C or Micro USB to power ESP32 and peripherals
+  - Can also use external 5V power supply for stability
+
+## 🌐 Wi-Fi Configuration:
+
+Set your network credentials in `main.cpp`:
+
+```cpp
+const char* targetSSID = "Your_SSID";
+const char* password = "Your_Password";
+```
+
+Ensure your PC and ESP32 are on the same Wi-Fi network.
+
+## 🧠 How to Run:
+
+1. Flash ESP32 Firmware
+
+   - Open `main.cpp` in Arduino IDE or PlatformIO.
+   - Connect ESP32 via USB and select the correct port.
+   - Upload the sketch.
+
+2. Start the Backend Server
+
+   ```bash
+   pip install -r requirements.txt
+   uvicorn main:app --reload
+   ```
+
+3. Launch the Frontend Web App
+
+   ```bash
+   cd frontend
+   npm install
+   npm start
+   ```
+
+4. Test the Connection
+
+   - Open Serial Monitor (baud: 115200)
+   - Confirm connection messages:
+     - ✅ "Connected to Wi-Fi"
+     - ✅ "ESP32 Web Server Running!"
+
+5. Play the Game!
+   - ESP32 will prompt:
+     - Log in via browser or play offline
+     - Choose sound using button input
+     - Follow and repeat LED + sound sequences
+     - If logged in, your score is uploaded automatically
+
+## 🛠️ Calibration / Reset Tips:
+
+- If LCD shows nothing: verify I2C address is `0x27`
+- If buttons unresponsive: confirm pull-up wiring and debounce handling
+- Volume default: 25, changeable via web UI
+- To reset: press onboard reset or disconnect/reconnect ESP32
+
+## 📍 Additional Notes:
+
+- Score uploads require active login
+- Volume requests may fall back to default on failure
+- If Wi-Fi is unavailable, device continues in Offline Mode
